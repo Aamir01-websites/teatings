@@ -252,7 +252,7 @@ export default function MenuPage() {
               fontSize: "1.4rem", fontWeight: 600,
               color: "var(--ink)", letterSpacing: "0.02em",
             }}>
-              Tea
+              Teatings
             </span>
           </Link>
 

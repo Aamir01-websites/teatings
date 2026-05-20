@@ -388,7 +388,7 @@ export default function AdminPage() {
                 fontFamily: "var(--font-display)", fontSize: "1.3rem",
                 fontWeight: 600, color: "var(--ink)", letterSpacing: "0.02em",
               }}>
-                Tea<span style={{ color: "var(--gold)" }}>tings</span>
+                Teatings
               </span>
             </Link>
             <span style={{
