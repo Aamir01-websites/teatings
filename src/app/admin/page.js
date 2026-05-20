@@ -1,24 +1,15 @@
-"use client";
+"use client"
 
 // src/app/admin/page.js
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { MENU_STORAGE_KEY, SEED_MENU, CATEGORY_ORDER, FILTERS } from "@/app/lib/constants"
-
-// ── EMPTY FORM STATE ──────────────────────────────────────────────────────────
+import { MENU_STORAGE_KEY, SEED_MENU, CATEGORY_ORDER, FILTERS } from "@/lib/constants"
 
 const EMPTY_ITEM = {
-  name: "",
-  price: "",
-  description: "",
-  label: "veg",
-  category: CATEGORY_ORDER[0],
-  filters: [],
-  img: "",
+  name: "", price: "", description: "",
+  label: "veg", category: CATEGORY_ORDER[0], filters: [], img: "",
 }
-
-// ── FOOD LABEL DOT ────────────────────────────────────────────────────────────
 
 function LabelDot({ type }) {
   const colors = { veg: "#388E3C", nonveg: "#B71C1C", egg: "#F9A825" }
@@ -31,44 +22,81 @@ function LabelDot({ type }) {
   )
 }
 
-// ── ITEM ROW (in table) ───────────────────────────────────────────────────────
+// ── MOBILE CARD (replaces table row on small screens) ────────────────────────
+
+function ItemCard({ item, onEdit, onDelete }) {
+  return (
+    <div style={{
+      padding: "14px 16px",
+      borderBottom: "0.5px solid var(--border)",
+      display: "flex", flexDirection: "column", gap: 6,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <LabelDot type={item.label} />
+          <span style={{ fontWeight: 500, color: "var(--ink)", fontSize: 14, fontFamily: "var(--font-display)" }}>
+            {item.name}
+          </span>
+        </div>
+        <span style={{ color: "var(--gold)", fontWeight: 500, fontSize: 14, fontFamily: "var(--font-body)" }}>
+          ₹{item.price}
+        </span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+            {item.category}
+          </span>
+          {item.filters?.length > 0 && (
+            <span style={{ fontSize: 11, color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+              {item.filters.join(" · ")}
+            </span>
+          )}
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => onEdit(item)} style={{
+            background: "var(--parchment)", border: "0.5px solid var(--border)",
+            borderRadius: 6, padding: "5px 14px", cursor: "pointer",
+            fontSize: 12, color: "var(--ink)", fontFamily: "var(--font-body)",
+          }}>
+            Edit
+          </button>
+          <button onClick={() => onDelete(item.id)} style={{
+            background: "none", border: "0.5px solid rgba(180,30,30,0.25)",
+            borderRadius: 6, padding: "5px 14px", cursor: "pointer",
+            fontSize: 12, color: "#B41E1E", fontFamily: "var(--font-body)",
+          }}>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── DESKTOP ROW ───────────────────────────────────────────────────────────────
 
 function ItemRow({ item, onEdit, onDelete }) {
   return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "2fr 1fr 1fr 1fr auto",
-      gap: 12,
-      alignItems: "center",
-      padding: "12px 16px",
-      borderBottom: "0.5px solid var(--border)",
-      fontFamily: "var(--font-body)",
-      fontSize: 14,
-    }}>
+    <div className="item-row">
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <LabelDot type={item.label} />
-        <span style={{ fontWeight: 500, color: "var(--ink)" }}>{item.name}</span>
+        <span style={{ fontWeight: 500, color: "var(--ink)", fontSize: 14 }}>{item.name}</span>
       </div>
-      <span style={{ color: "var(--muted)" }}>{item.category}</span>
-      <span style={{ color: "var(--gold)", fontWeight: 500 }}>₹{item.price}</span>
-      <span style={{ color: "var(--muted)", fontSize: 12 }}>
-        {item.filters?.join(", ") || "—"}
-      </span>
+      <span style={{ color: "var(--muted)", fontSize: 13 }}>{item.category}</span>
+      <span style={{ color: "var(--gold)", fontWeight: 500, fontSize: 14 }}>₹{item.price}</span>
+      <span style={{ color: "var(--muted)", fontSize: 12 }}>{item.filters?.join(", ") || "—"}</span>
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={() => onEdit(item)} style={{
           background: "var(--parchment)", border: "0.5px solid var(--border)",
           borderRadius: 6, padding: "5px 12px", cursor: "pointer",
           fontSize: 12, color: "var(--ink)", fontFamily: "var(--font-body)",
-        }}>
-          Edit
-        </button>
+        }}>Edit</button>
         <button onClick={() => onDelete(item.id)} style={{
           background: "none", border: "0.5px solid rgba(180,30,30,0.25)",
           borderRadius: 6, padding: "5px 12px", cursor: "pointer",
           fontSize: 12, color: "#B41E1E", fontFamily: "var(--font-body)",
-        }}>
-          Delete
-        </button>
+        }}>Delete</button>
       </div>
     </div>
   )
@@ -78,14 +106,11 @@ function ItemRow({ item, onEdit, onDelete }) {
 
 function ItemForm({ initial, onSave, onCancel }) {
   const [form, setForm] = useState(initial || EMPTY_ITEM)
-
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
-
   const toggleFilter = (f) =>
     set("filters", form.filters.includes(f)
       ? form.filters.filter(x => x !== f)
-      : [...form.filters, f]
-    )
+      : [...form.filters, f])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -95,52 +120,43 @@ function ItemForm({ initial, onSave, onCancel }) {
 
   const inputStyle = {
     width: "100%", padding: "0.6rem 0.8rem",
-    border: "0.5px solid var(--border)",
-    borderRadius: 8, fontSize: 14,
-    fontFamily: "var(--font-body)", color: "var(--ink)",
-    background: "var(--cream)", outline: "none",
+    border: "0.5px solid var(--border)", borderRadius: 8,
+    fontSize: 14, fontFamily: "var(--font-body)",
+    color: "var(--ink)", background: "var(--cream)", outline: "none",
   }
-
   const labelStyle = {
-    fontSize: 11, textTransform: "uppercase",
-    letterSpacing: "0.1em", color: "var(--muted)",
-    fontFamily: "var(--font-body)", marginBottom: 4, display: "block",
+    fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em",
+    color: "var(--muted)", fontFamily: "var(--font-body)",
+    marginBottom: 4, display: "block",
   }
 
   return (
-    /* backdrop */
-    <div
-      onClick={(e) => { if (e.target === e.currentTarget) onCancel() }}
-      style={{
-        position: "fixed", inset: 0, zIndex: 200,
-        background: "rgba(12,58,51,0.35)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "1rem",
-      }}
-    >
+    <div onClick={(e) => { if (e.target === e.currentTarget) onCancel() }} style={{
+      position: "fixed", inset: 0, zIndex: 200,
+      background: "rgba(12,58,51,0.35)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "1rem",
+    }}>
       <div style={{
         background: "var(--cream)", borderRadius: 16,
-        padding: "2rem", width: "100%", maxWidth: 500,
+        padding: "1.5rem", width: "100%", maxWidth: 500,
         maxHeight: "90vh", overflowY: "auto",
         borderTop: "3px solid var(--gold)",
       }}>
         <h2 style={{
           fontFamily: "var(--font-display)", fontWeight: 300,
-          fontSize: "1.6rem", color: "var(--ink)", marginBottom: "1.5rem",
+          fontSize: "1.5rem", color: "var(--ink)", marginBottom: "1.25rem",
         }}>
           {initial ? "Edit item" : "Add new item"}
         </h2>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-
-          {/* Name */}
           <div>
             <label style={labelStyle}>Item name *</label>
             <input style={inputStyle} required value={form.name}
               onChange={e => set("name", e.target.value)} placeholder="e.g. Mushroom Omelette" />
           </div>
 
-          {/* Price + Category */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
               <label style={labelStyle}>Price (₹) *</label>
@@ -156,7 +172,6 @@ function ItemForm({ initial, onSave, onCancel }) {
             </div>
           </div>
 
-          {/* Description */}
           <div>
             <label style={labelStyle}>Description</label>
             <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 72 }}
@@ -165,57 +180,46 @@ function ItemForm({ initial, onSave, onCancel }) {
               placeholder="Short description of the dish..." />
           </div>
 
-          {/* Food label */}
           <div>
             <label style={labelStyle}>Food type</label>
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {["veg", "nonveg", "egg"].map(l => {
                 const active = form.label === l
                 return (
-                  <button key={l} type="button"
-                    onClick={() => set("label", l)}
-                    style={{
-                      padding: "6px 16px", borderRadius: 50,
-                      border: active ? "1.5px solid var(--ink)" : "0.5px solid var(--border)",
-                      background: active ? "var(--ink)" : "transparent",
-                      color: active ? "var(--cream)" : "var(--muted)",
-                      fontSize: 12, cursor: "pointer",
-                      fontFamily: "var(--font-body)",
-                      display: "flex", alignItems: "center", gap: 6,
-                    }}>
-                    <LabelDot type={l} />
-                    {l}
+                  <button key={l} type="button" onClick={() => set("label", l)} style={{
+                    padding: "6px 14px", borderRadius: 50, fontSize: 12, cursor: "pointer",
+                    fontFamily: "var(--font-body)",
+                    border: active ? "1.5px solid var(--ink)" : "0.5px solid var(--border)",
+                    background: active ? "var(--ink)" : "transparent",
+                    color: active ? "var(--cream)" : "var(--muted)",
+                    display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                    <LabelDot type={l} />{l}
                   </button>
                 )
               })}
             </div>
           </div>
 
-          {/* Filters */}
           <div>
             <label style={labelStyle}>Filters</label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {FILTERS.map(f => {
                 const active = form.filters.includes(f)
                 return (
-                  <button key={f} type="button"
-                    onClick={() => toggleFilter(f)}
-                    style={{
-                      padding: "5px 14px", borderRadius: 50,
-                      border: active ? "1.5px solid var(--gold)" : "0.5px solid var(--border)",
-                      background: active ? "var(--gold)" : "transparent",
-                      color: active ? "var(--ink)" : "var(--muted)",
-                      fontSize: 12, cursor: "pointer",
-                      fontFamily: "var(--font-body)", fontWeight: active ? 500 : 400,
-                    }}>
-                    {f}
-                  </button>
+                  <button key={f} type="button" onClick={() => toggleFilter(f)} style={{
+                    padding: "5px 14px", borderRadius: 50, fontSize: 12,
+                    cursor: "pointer", fontFamily: "var(--font-body)",
+                    border: active ? "1.5px solid var(--gold)" : "0.5px solid var(--border)",
+                    background: active ? "var(--gold)" : "transparent",
+                    color: active ? "var(--ink)" : "var(--muted)",
+                    fontWeight: active ? 500 : 400,
+                  }}>{f}</button>
                 )
               })}
             </div>
           </div>
 
-          {/* Image path */}
           <div>
             <label style={labelStyle}>Image path</label>
             <input style={inputStyle} value={form.img}
@@ -226,23 +230,18 @@ function ItemForm({ initial, onSave, onCancel }) {
             </p>
           </div>
 
-          {/* Actions */}
           <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
             <button type="button" onClick={onCancel} style={{
               flex: 1, padding: "0.75rem", border: "0.5px solid var(--border)",
               borderRadius: 8, background: "none", cursor: "pointer",
               fontSize: 14, color: "var(--muted)", fontFamily: "var(--font-body)",
-            }}>
-              Cancel
-            </button>
+            }}>Cancel</button>
             <button type="submit" style={{
               flex: 2, padding: "0.75rem",
               background: "var(--ink)", color: "var(--cream)",
               border: "none", borderRadius: 8, cursor: "pointer",
               fontSize: 14, fontWeight: 500, fontFamily: "var(--font-body)",
-            }}>
-              {initial ? "Save changes" : "Add item"}
-            </button>
+            }}>{initial ? "Save changes" : "Add item"}</button>
           </div>
         </form>
       </div>
@@ -250,7 +249,7 @@ function ItemForm({ initial, onSave, onCancel }) {
   )
 }
 
-// ── MAIN ADMIN PAGE ───────────────────────────────────────────────────────────
+// ── MAIN ─────────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
   const [items, setItems] = useState([])
@@ -260,15 +259,12 @@ export default function AdminPage() {
   const [filterCat, setFilterCat] = useState("All")
   const [toast, setToast] = useState(null)
 
-  // Load
   useEffect(() => {
     try {
       const raw = localStorage.getItem(MENU_STORAGE_KEY)
       const data = raw ? JSON.parse(raw) : null
       setItems(data && data.length > 0 ? data : SEED_MENU)
-    } catch {
-      setItems(SEED_MENU)
-    }
+    } catch { setItems(SEED_MENU) }
     setLoaded(true)
   }, [])
 
@@ -284,34 +280,22 @@ export default function AdminPage() {
 
   const handleSave = (formData) => {
     if (editTarget) {
-      const next = items.map(i => i.id === editTarget.id ? { ...formData, id: editTarget.id } : i)
-      persist(next)
+      persist(items.map(i => i.id === editTarget.id ? { ...formData, id: editTarget.id } : i))
       showToast("Item updated")
     } else {
-      const newId = Date.now()
-      persist([...items, { ...formData, id: newId }])
+      persist([...items, { ...formData, id: Date.now() }])
       showToast("Item added")
     }
     setShowForm(false)
     setEditTarget(null)
   }
 
-  const handleEdit = (item) => {
-    setEditTarget(item)
-    setShowForm(true)
-  }
-
+  const handleEdit = (item) => { setEditTarget(item); setShowForm(true) }
   const handleDelete = (id) => {
     if (!confirm("Delete this item?")) return
     persist(items.filter(i => i.id !== id))
     showToast("Item deleted")
   }
-
-  const handleAdd = () => {
-    setEditTarget(null)
-    setShowForm(true)
-  }
-
   const handleReset = () => {
     if (!confirm("Reset menu to default seed data? This cannot be undone.")) return
     persist(SEED_MENU)
@@ -325,15 +309,11 @@ export default function AdminPage() {
     <>
       <style>{`
         .admin-tab {
-          flex-shrink: 0;
-          background: none; border: none; cursor: pointer;
-          padding: 0.65rem 1rem;
-          font-family: var(--font-body);
+          flex-shrink: 0; background: none; border: none; cursor: pointer;
+          padding: 0.65rem 1rem; font-family: var(--font-body);
           font-size: 0.78rem; letter-spacing: 0.04em; text-transform: uppercase;
-          color: var(--muted);
-          border-bottom: 2px solid transparent;
-          margin-bottom: -0.5px;
-          transition: color 0.2s, border-color 0.2s;
+          color: var(--muted); border-bottom: 2px solid transparent;
+          margin-bottom: -0.5px; transition: color 0.2s, border-color 0.2s;
           white-space: nowrap;
         }
         .admin-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
@@ -341,28 +321,51 @@ export default function AdminPage() {
 
         @keyframes slideIn {
           from { transform: translateY(10px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
+          to   { transform: translateY(0); opacity: 1; }
         }
         .toast {
           position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
           background: var(--ink); color: var(--cream);
           padding: 0.65rem 1.4rem; border-radius: 50px;
           font-size: 13px; font-family: var(--font-body);
-          z-index: 300; animation: slideIn 0.2s ease;
-          white-space: nowrap;
+          z-index: 300; animation: slideIn 0.2s ease; white-space: nowrap;
         }
 
+        /* desktop table row */
+        .item-row {
+          display: grid;
+          grid-template-columns: 2fr 1fr 1fr 1fr auto;
+          gap: 12px; align-items: center;
+          padding: 12px 16px;
+          border-bottom: 0.5px solid var(--border);
+          font-family: var(--font-body);
+        }
         .item-row-header {
           display: grid;
           grid-template-columns: 2fr 1fr 1fr 1fr auto;
-          gap: 12px;
-          padding: 10px 16px;
+          gap: 12px; padding: 10px 16px;
           border-bottom: 0.5px solid var(--border);
-          font-size: 11px;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: var(--muted);
-          font-family: var(--font-body);
+          font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+          color: var(--muted); font-family: var(--font-body);
+        }
+
+        /* nav buttons — icon only on very small screens */
+        .nav-view-menu-text { display: inline; }
+        .nav-add-text { display: inline; }
+
+        @media (max-width: 480px) {
+          .nav-view-menu-text { display: none; }
+          .nav-add-text { display: none; }
+          .nav-icon-btn { padding: 8px 12px !important; }
+        }
+
+        /* switch between table and card layout */
+        .desktop-table { display: block; }
+        .mobile-cards  { display: none; }
+
+        @media (max-width: 640px) {
+          .desktop-table { display: none; }
+          .mobile-cards  { display: block; }
         }
       `}</style>
 
@@ -371,15 +374,15 @@ export default function AdminPage() {
         fontFamily: "var(--font-body)", paddingBottom: 48,
       }}>
 
-        {/* ── TOP BAR ── */}
+        {/* ── NAV ── */}
         <nav style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 1.5rem", height: 64,
+          padding: "0 1.25rem", height: 64,
           background: "var(--cream)",
           borderBottom: "0.5px solid var(--border)",
           position: "sticky", top: 0, zIndex: 50,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Link href="/" style={{ textDecoration: "none" }}>
               <span style={{
                 fontFamily: "var(--font-display)", fontSize: "1.3rem",
@@ -390,56 +393,63 @@ export default function AdminPage() {
             </Link>
             <span style={{
               fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase",
-              color: "var(--muted)", borderLeft: "0.5px solid var(--border)",
-              paddingLeft: 16,
+              color: "var(--muted)", borderLeft: "0.5px solid var(--border)", paddingLeft: 12,
             }}>
               Admin
             </span>
           </div>
 
-          <div style={{ display: "flex", gap: 10 }}>
-            <Link href="/menu" style={{
+          <div style={{ display: "flex", gap: 8 }}>
+            <Link href="/menu" className="nav-icon-btn" style={{
               padding: "8px 16px", borderRadius: 50,
               border: "0.5px solid var(--border)",
               fontSize: 12, color: "var(--ink)",
               textDecoration: "none", fontFamily: "var(--font-body)",
+              display: "flex", alignItems: "center", gap: 4,
             }}>
-              View Menu ↗
+              {/* menu icon fallback for mobile */}
+              <span style={{ fontSize: 14 }}>☰</span>
+              <span className="nav-view-menu-text">View Menu</span>
             </Link>
-            <button onClick={handleAdd} style={{
-              background: "var(--ink)", color: "var(--cream)",
-              border: "none", borderRadius: 50,
-              padding: "8px 18px", fontSize: 12,
-              fontWeight: 500, cursor: "pointer",
-              fontFamily: "var(--font-body)",
-            }}>
-              + Add item
+            <button onClick={() => { setEditTarget(null); setShowForm(true) }}
+              className="nav-icon-btn"
+              style={{
+                background: "var(--ink)", color: "var(--cream)",
+                border: "none", borderRadius: 50,
+                padding: "8px 18px", fontSize: 12,
+                fontWeight: 500, cursor: "pointer",
+                fontFamily: "var(--font-body)",
+                display: "flex", alignItems: "center", gap: 4,
+              }}>
+              <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
+              <span className="nav-add-text">Add item</span>
             </button>
           </div>
         </nav>
 
         {/* ── PAGE HEADER ── */}
-        <div style={{ padding: "2rem 1.5rem 1rem" }}>
+        <div style={{ padding: "1.75rem 1.25rem 1rem" }}>
           <span style={{
             fontSize: "0.72rem", letterSpacing: "0.18em",
             textTransform: "uppercase", color: "var(--gold)",
+            fontFamily: "var(--font-body)",
           }}>
             Menu management
           </span>
           <h1 style={{
             fontFamily: "var(--font-display)", fontWeight: 300,
-            fontSize: "clamp(1.8rem, 4vw, 2.4rem)", color: "var(--ink)",
+            fontSize: "clamp(1.6rem, 4vw, 2.2rem)", color: "var(--ink)",
             marginTop: "0.3rem",
           }}>
             {loaded ? items.length : "—"} items in your menu
           </h1>
         </div>
 
-        {/* ── CATEGORY FILTER TABS ── */}
+        {/* ── CATEGORY TABS ── */}
         <div style={{
           display: "flex", gap: 0, overflowX: "auto",
           borderBottom: "0.5px solid var(--border)",
-          padding: "0 1.5rem", scrollbarWidth: "none",
+          padding: "0 1.25rem", scrollbarWidth: "none",
         }}>
           {cats.map(cat => (
             <button key={cat}
@@ -450,43 +460,53 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {/* ── TABLE ── */}
-        <div style={{ padding: "1.5rem" }}>
+        {/* ── TABLE / CARDS ── */}
+        <div style={{ padding: "1.25rem" }}>
           <div style={{
             background: "#fff", borderRadius: 12,
-            border: "0.5px solid var(--border)",
-            overflow: "hidden",
+            border: "0.5px solid var(--border)", overflow: "hidden",
           }}>
-            {/* Header row */}
-            <div className="item-row-header">
-              <span>Name</span>
-              <span>Category</span>
-              <span>Price</span>
-              <span>Filters</span>
-              <span></span>
+
+            {/* Desktop table */}
+            <div className="desktop-table">
+              <div className="item-row-header">
+                <span>Name</span><span>Category</span>
+                <span>Price</span><span>Filters</span><span></span>
+              </div>
+              {!loaded ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)", fontSize: 14 }}>Loading…</div>
+              ) : visible.length === 0 ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)", fontSize: 14 }}>No items in this category.</div>
+              ) : (
+                visible.map(item => (
+                  <ItemRow key={item.id} item={item} onEdit={handleEdit} onDelete={handleDelete} />
+                ))
+              )}
             </div>
 
-            {!loaded ? (
-              <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)", fontSize: 14 }}>
-                Loading…
-              </div>
-            ) : visible.length === 0 ? (
-              <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)", fontSize: 14 }}>
-                No items in this category.
-              </div>
-            ) : (
-              visible.map(item => (
-                <ItemRow key={item.id} item={item} onEdit={handleEdit} onDelete={handleDelete} />
-              ))
-            )}
+            {/* Mobile cards */}
+            <div className="mobile-cards">
+              {!loaded ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)", fontSize: 14 }}>Loading…</div>
+              ) : visible.length === 0 ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "var(--muted)", fontSize: 14 }}>No items in this category.</div>
+              ) : (
+                visible.map(item => (
+                  <ItemCard key={item.id} item={item} onEdit={handleEdit} onDelete={handleDelete} />
+                ))
+              )}
+            </div>
           </div>
 
           {/* Danger zone */}
-          <div style={{ marginTop: "2rem", padding: "1.25rem", border: "0.5px solid rgba(180,30,30,0.2)", borderRadius: 12 }}>
-            <p style={{ fontSize: 12, color: "#B41E1E", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+          <div style={{
+            marginTop: "1.5rem", padding: "1.25rem",
+            border: "0.5px solid rgba(180,30,30,0.2)", borderRadius: 12,
+          }}>
+            <p style={{ fontSize: 12, color: "#B41E1E", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
               Danger zone
             </p>
-            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12 }}>
+            <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 12, lineHeight: 1.6 }}>
               Reset the entire menu back to the default seed data. This will overwrite all your changes.
             </p>
             <button onClick={handleReset} style={{
@@ -500,7 +520,6 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* ── FORM MODAL ── */}
       {showForm && (
         <ItemForm
           initial={editTarget}
@@ -509,7 +528,6 @@ export default function AdminPage() {
         />
       )}
 
-      {/* ── TOAST ── */}
       {toast && <div className="toast">{toast}</div>}
     </>
   )
