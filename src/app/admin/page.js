@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { MENU_STORAGE_KEY, SEED_MENU, CATEGORY_ORDER, FILTERS } from "@/lib/constants"
+import { MENU_STORAGE_KEY, SEED_MENU, CATEGORY_ORDER, FILTERS } from "@/app/lib/constants"
 
 const EMPTY_ITEM = {
   name: "", price: "", description: "",
